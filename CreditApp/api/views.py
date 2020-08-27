@@ -32,14 +32,14 @@ def create_transaction(request):
         return Response({"message": 'card not found'}, status=404)
     if card.password != payload['card_password']:
         return Response({"authorized": False}, status=401)
-    if card.amount < amount: 
-        return Response({"message": "out of balance"}, status=400)
     merchant = Merchant.objects.filter(name=payload['merchant_name']).first()
     if not merchant:
         return Response({"message": 'merchant not found'}, status=404)
     
     with db.transaction.atomic():
         card = Card.objects.select_for_update().get(id=card.id)
+        if card.amount < amount: 
+            return Response({"message": "out of balance"}, status=400)
         transaction = Transaction.objects.create(
             merchant=merchant,
             card=card,
